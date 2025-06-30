@@ -1,0 +1,60 @@
+# .pre-commit-config.yaml
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+# Default stages: commit, push (add `stages: [manual]` to run only manually)
+# Default verbose: false (add `verbose: true` for more output)
+# Default minimum pre-commit version: 0.0.0 (add `minimum_pre_commit_version: '2.9.0'` for example)
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0 # Use the latest version
+    hooks:
+    -   id: trailing-whitespace # Trims trailing whitespace
+    -   id: end-of-file-fixer   # Ensures files end with a newline and only one newline
+    -   id: check-yaml          # Checks yaml files for parseable syntax
+    -   id: check-json          # Checks json files for parseable syntax
+    -   id: check-added-large-files # Prevents adding large files
+        args: ['--maxkb=1024'] # 1MB, adjust as needed
+    -   id: check-merge-conflict  # Checks for files that contain merge conflict strings
+    -   id: check-case-conflict   # Checks for files that would conflict on case-insensitive filesystems
+    -   id: debug-statements      # Checks for debugger imports and calls
+        language_version: python3.11
+
+-   repo: https://github.com/psf/black
+    rev: 24.4.2 # Use the version compatible with your project (matches requirements.txt)
+    hooks:
+    -   id: black
+        language_version: python3.11
+        args: [--line-length=120] # Optional: if you want to override pyproject.toml or default
+
+-   repo: https://github.com/PyCQA/flake8
+    rev: 7.1.0 # Use the version compatible with your project (matches requirements.txt)
+    hooks:
+    -   id: flake8
+        language_version: python3.11
+        args: ['--max-line-length=120', '--ignore=E203,W503'] # Match .flake8 config
+        # additional_dependencies: [flake8-bugbear] # Example of adding plugins
+
+# Optional: isort for import sorting
+# -   repo: https://github.com/pycqa/isort
+#     rev: 5.13.2
+#     hooks:
+#       - id: isort
+#         name: isort (python)
+#         args: ["--profile", "black", "--filter-files"]
+
+# Optional: mypy for static type checking if you use type hints extensively
+# -   repo: https://github.com/pre-commit/mirrors-mypy
+#     rev: 'v1.10.0'  # Pick the Mypy version that suits your project
+#     hooks:
+#     -   id: mypy
+#         args: [--ignore-missing-imports, --scripts-are-modules]
+#         # You might need to configure `files` or `exclude` depending on your project structure
+#         # additional_dependencies: [pydantic] # if mypy has issues with pydantic models
+
+# To use:
+# 1. Install pre-commit: pip install pre-commit
+# 2. Install hooks: pre-commit install
+# Now hooks will run automatically before each commit.
+# To run all hooks manually: pre-commit run --all-files

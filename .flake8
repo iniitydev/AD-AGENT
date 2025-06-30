@@ -1,0 +1,13 @@
+[flake8]
+exclude =
+    .git,
+    __pycache__,
+    docs,
+    old,
+    build,
+    dist,
+    .venv,
+    venv,
+    env
+max-line-length = 120
+ignore = E203, W503 # E203: whitespace before ':', W503: line break before binary operator (black compatible)

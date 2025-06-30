@@ -1,0 +1,8 @@
+{
+    "__comment__": "This is a placeholder manifest. Generate a real one using 'make manifest'.",
+    "algorithm": "sha256",
+    "files": {
+        "README.md": "example_hash_for_readme",
+        "src/main.py": "example_hash_for_main_py"
+    }
+}

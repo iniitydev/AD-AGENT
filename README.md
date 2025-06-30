@@ -1,176 +1,247 @@
-# AD-AGENT
+# Sovereign Anomaly Detection Agent
 
-**AD-AGENT** is an LLM‑driven multi-agent anomaly detection platform designed to support the full lifecycle of real-world anomaly detection—from data preprocessing and model selection to detection, explanation, and evaluation. It integrates classical and graph-based AD algorithms with LLM-powered modules for enhanced usability, privacy, and adaptability.
+| **Version** | **License** | **Maintained by** |
+| :--- | :--- | :--- |
+| 2.5.0 | MIT | [iniity.com](https://iniity.com) |
 
-![flowchart](./figs/flowchart.jpg)
+This project provides a portable, containerized anomaly detection agent designed with data sovereignty and verifiability at its core. It enables users to train and deploy anomaly detection models within their own environments, ensuring that sensitive data never leaves their control.
 
-> 🔍 One platform. Multiple agents. All your anomaly detection workflows—automated, explainable, and secure.
+The agent is built using Python, Docker, and common data science libraries, providing a robust and reproducible environment for anomaly detection tasks.
 
----
+## Core Concepts
 
-
-
-## 📝 Citation
-
-If you find this work useful, please cite our paper: [https://arxiv.org/abs/2505.12594](https://arxiv.org/abs/2505.12594)
-
-```bibtex
-@article{yang2025ad,
-  title={AD-AGENT: A Multi-agent Framework for End-to-end Anomaly Detection},
-  author={Yang, Tiankai and Liu, Junjun and Siu, Wingchun and Wang, Jiahang and Qian, Zhuangzhuang and Song, Chanjuan and Cheng, Cheng and Hu, Xiyang and Zhao, Yue},
-  journal={arXiv preprint arXiv:2505.12594},
-  year={2025}
-}
-```
+-   **Sovereignty:** Your data and models **never** leave your environment. The agent is a stateless engine that operates on locally mounted volumes. All processing happens locally within the Docker container.
+-   **Verifiability:** The codebase can be cryptographically verified against a `sovereign_manifest.json` file (generated via `make manifest`) to ensure it has not been tampered with.
+-   **Security:** The environment is hardened by default, using a non-root user within the Docker container, minimal privileges, and a secure base image.
+-   **Automation:** A comprehensive `Makefile` and pre-commit hooks automate common developer and operational tasks, from testing and linting to building and running the agent.
+-   **Configuration:** Application settings are managed via environment variables (using a `.env` file) and validated with Pydantic for robustness.
+-   **CLI & API:** Interact with the agent via a feature-rich Command Line Interface (CLI) or a FastAPI-based HTTP API.
 
 ---
 
-## ✨ Features
+## Project Structure
 
-- **Unified Multi-modal-library Automation**: Supports multiple domain-specific AD libraries (PyOD for multivariate data, PyGOD for graph data, and TSLib for time series) and enables end-to-end, cross-modality pipeline construction from natural language.
-- **Accessible to Non-experts**: Enters a sentence such as "Detect anomalies in cardio.mat" and obtains an executable script without hand‑written code.
-- **Multi-Agent Architecture**: Processing, detection, explanation, and adaptation are handled by decoupled agents with clear APIs and extendability.
-- **Automatic Model Suggestion**: Leverages the reasoning ability of the LLM to recommend competitive algorithms when no specific model is provided.
-- **Privacy-Aware Design** (in progress): Includes a framework for anonymizing data before AD processing, suitable for regulated domains.
-- **Human-in-the-loop Support** (in progress): Enables analysts to query explanations and iterate on detection results interactively.
-
-> Please find more details in our paper [here](https://arxiv.org/abs/2505.12594).
-
-
----
-
-## 🔧 Setup Instructions
-
-### 1. Clone the Repository
-
-```bash
-git clone git@github.com:USC-FORTIS/AD-AGENT.git
-cd AD-AGENT
 ```
-
-### 2. Create and Activate a Virtual Environment
-
-#### On macOS/Linux:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-#### On Windows:
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
-
-pip install -r requirements.txt
-```
-
-### 4. Set Your OpenAI API Key
-
-Edit the config file to include your OpenAI API key:
-
-```python
-# File: /config/config.py
-
-OPENAI_API_KEY = 'your-api-key-here'
+sovereign-ad-agent/
+├── .github/workflows/      # CI/CD pipelines (e.g., ci.yml)
+├── data/                   # Sovereign data mount point (input - e.g., dataset.csv)
+├── models/                 # Sovereign model mount point (output - e.g., anomaly_model.joblib)
+├── scripts/                # Utility scripts (e.g., verify_integrity.py)
+├── src/                    # Core Python application source code
+│   ├── __init__.py
+│   ├── agent/              # Core agent logic (detection, preprocessing, etc.)
+│   │   ├── __init__.py
+│   │   ├── data_manifest.py
+│   │   ├── detection.py
+│   │   ├── encryption.py
+│   │   └── preprocessing.py
+│   ├── config.py           # Pydantic-based configuration loader
+│   ├── logger.py           # Centralized logging setup
+│   └── main.py             # Main application and CLI/API entry point
+├── tests/                  # Unit and integration tests (to be populated)
+│   ├── __init__.py
+│   └── test_detection.py   # Example test file
+├── .dockerignore           # Files to exclude from Docker image
+├── .flake8                 # Configuration for the flake8 linter
+├── .gitignore              # Files to exclude from Git
+├── .pre-commit-config.yaml # Configuration for pre-commit hooks
+├── Dockerfile              # Hardened instructions to build the container image
+├── docker-compose.yml      # Defines and orchestrates local services
+├── LICENSE                 # MIT License file
+├── Makefile                # Automates the complete developer workflow
+├── POLICY.md               # The Sovereign Operation Policy document
+├── README.md               # This file
+├── requirements.txt        # Python dependencies
+├── sovereign_manifest.json # Example file integrity manifest (generated by `make manifest`)
+└── .env.example            # Template for environment variables
 ```
 
 ---
 
-## 🚀 Running the Program
+## Getting Started
 
-### Run Normally (Sequential Execution)
+### Prerequisites
 
-```bash
-python main.py
-```
+-   **Docker & Docker Compose:** Ensure Docker Desktop or Docker Engine with Docker Compose plugin is installed and running. ([Install Docker](https://docs.docker.com/get-docker/))
+-   **Git:** For cloning the repository.
+-   **Make:** (Optional, but recommended for using the Makefile) Typically available on Linux/macOS. Windows users can use WSL or Git Bash.
+-   **Python 3.11+:** (For local development outside Docker, or for pre-commit hooks)
 
-### Run in Parallel Mode
+### First-Time Setup
 
-```bash
-python main.py -p
-```
+1.  **Clone the Repository**
+    ```sh
+    git clone https://github.com/your-repo/sovereign-ad-agent.git # Replace with your repo URL
+    cd sovereign-ad-agent
+    ```
 
-### Run in Optimizer Mode
+2.  **Install Git Hooks (for developers)**
+    This step ensures code quality before you commit. Requires Python and pip.
+    ```sh
+    pip install pre-commit
+    pre-commit install
+    ```
 
-```bash
-python main.py -o
-```
+3.  **Create Local Configuration**
+    Copy the `.env.example` template to `.env`. The defaults are generally ready for local use.
+    ```sh
+    cp .env.example .env
+    ```
+    Review `.env` and adjust `MODEL_CONTAMINATION` or other parameters if needed.
 
----
+4.  **Place Your Data**
+    -   Create a `data/` directory in the project root if it doesn't exist: `mkdir -p data`
+    -   Add your dataset (e.g., `dataset.csv`) into this `data/` directory. The agent expects data at `/app/data/dataset.csv` inside the container, which maps to `./data/dataset.csv` on your host.
+    -   Create a `models/` directory: `mkdir -p models`. This is where trained models will be saved.
 
-## 🧪 Test Commands
-
-You can also run the system with natural-language-like test commands.
-
-### Run a Specific Algorithm
-
-```text
-# PyOD
-Run IForest on ./data/glass_train.mat and ./data/glass_test.mat
-Run all on ./data/glass_train.mat and ./data/glass_test.mat
-# PyGOD
-Run DOMINANT on ./data/inj_cora_train.pt and ./data/inj_cora_test.pt
-# TSLib 
-Run LightTS on ./data/MSL and ./data/MSL
-# Darts (in progress)
-Run GlobalNaiveAggregate on ./data/yahoo_train.csv and ./data/yahoo_test.csv
-
-```
-
-<img src="./figs/shortcut.jpg" alt="shortcut" style="zoom:30%;" />
-
-### Run All Algorithms
-
-```text
-Run all on ./data/glass_train.mat and ./data/glass_test.mat
-```
+5.  **Build and Start the Agent Service**
+    This command builds the Docker image (if not already built) and starts the agent container in detached mode.
+    ```sh
+    make up
+    ```
+    The agent service will be running in the background. The API (if served) would be accessible at `http://localhost:8000`.
 
 ---
 
-## 📁 Project Structure
+### Using the Agent (CLI via Makefile)
 
-```
-.
-├── config/
-│   └── config.py             # Configuration file for API keys
-.
-.
-.
-├── data/
-│   └── glass.mat             # Sample dataset
-├── main.py                   # Main execution script
-├── requirements.txt          # Required Python packages
-└── README.md                 # Project documentation
-```
+The `Makefile` provides convenient shortcuts for interacting with the agent running inside the Docker container.
+
+-   **Train a Model:**
+    This command executes the training process using the data specified by `INPUT_DATA_PATH` in your `.env` file (defaulting to `/app/data/dataset.csv`). The trained model is saved to `MODEL_OUTPUT_PATH` (defaulting to `/app/models/anomaly_model.joblib`).
+    ```sh
+    make train
+    ```
+
+-   **Make Predictions:**
+    This command runs predictions using the trained model on a dataset.
+    ```sh
+    # Predict using the default INPUT_DATA_PATH
+    make predict
+
+    # Predict using a specific input file (path relative to project root, accessible by container)
+    # First, ensure the file is in a mounted volume, e.g., ./data/new_data.csv
+    # Then, the path inside the container would be /app/data/new_data.csv
+    # The CLI option expects the path *inside* the container.
+    # docker-compose exec agent python -m src.main predict --input-file /app/data/new_data.csv
+    ```
+    For `make predict` with a custom file, you might need to adjust the Makefile or run the `docker-compose exec` command directly if the Makefile doesn't support passing arguments to `predict`. The current `Makefile` `predict` target doesn't pass custom files.
+
+-   **Start the API Server:**
+    If you want to interact with the agent via its HTTP API:
+    ```sh
+    make serve
+    ```
+    The API will be available at `http://localhost:8000`. Access the interactive API documentation (Swagger UI) at `http://localhost:8000/docs`.
+
+-   **View Agent Logs:**
+    ```sh
+    make logs
+    ```
+
+-   **Access Agent Shell:**
+    To get an interactive bash shell inside the running agent container:
+    ```sh
+    make shell
+    ```
+
+-   **View Current Configuration:**
+    Displays the configuration the agent is using (loaded from `.env`).
+    ```sh
+    docker-compose exec agent python -m src.main config
+    ```
 
 ---
 
-## 📊 Experiments
+### Developer Workflow: The `Makefile`
 
-- Pipeline generation performance by library, showing success rate (code runs without error), average latency, LLM token usage (input/output), and per-pipeline billing cost in US dollars. The time spent in Reviewer is related to the complexity of models, which explains the increase in TSLib. **AD-AGENT demonstrates high reliability in producing valid pipelines across modalities, with low latency and manageable cost.**![success_table](./figs/success_table.jpg)
-- Model selection results for PyOD and PyGOD. We display the average AUROC of models recommended by querying the reasoning LLM three times (duplicates allowed). "Best Performance" marks the highest performance achieved by any available model for each dataset, while "Average Baseline" denotes the mean performance across all available models. **The LLM's recommendations substantially exceed the average baseline and closely track the best performance in most datasets.**![model_selection](./figs/model_selection.jpg)
+The `Makefile` is your primary tool for development and operational tasks.
+
+| Command             | Description                                                              |
+| :------------------ | :----------------------------------------------------------------------- |
+| `make help`         | Show all available Makefile commands.                                    |
+| `make up`           | Build and start all services (agent) in detached mode.                   |
+| `make down`         | Stop and remove all running services.                                    |
+| `make logs`         | Follow logs for the `agent` service.                                     |
+| `make shell`        | Start a bash shell inside the `agent` container.                         |
+| `make serve`        | Start the FastAPI server inside the `agent` container.                   |
+| `make train`        | Run the model training process inside the `agent` container.             |
+| `make predict`      | Run model prediction on the input data inside the `agent` container.     |
+| `make lint`         | Run `flake8` linter on the source code (`src/`, `tests/`).                |
+| `make format`       | Format code with `black` (`src/`, `tests/`).                             |
+| `make test`         | Run `pytest` for all tests (assumes tests are in `tests/`).              |
+| `make manifest`     | (Re)generate the `sovereign_manifest.json` file for code integrity.      |
+| `make verify-integrity` | Verify codebase integrity against `sovereign_manifest.json`.             |
+| `make clean`        | Stop services and remove all volumes (Warning: data in `./data` and `./models` on host are preserved, but Docker volumes if any other are defined would be lost). |
 
 ---
 
-## 📌 Notes
+### Configuration (`.env` file)
 
-- Make sure your dataset is placed inside the `./data/` directory.
-- Modify `main.py` to add support for additional algorithms or datasets if needed.
+The agent's behavior is configured through environment variables, typically defined in a `.env` file in the project root. Refer to `.env.example` for available options.
+
+| Variable              | Description                                                                    | Default (in code)        |
+| :-------------------- | :----------------------------------------------------------------------------- | :----------------------- |
+| `ENVIRONMENT`         | The runtime environment (e.g., `development`, `production`).                   | `development`            |
+| `LOG_LEVEL`           | Logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`).           | `INFO`                   |
+| `INPUT_DATA_PATH`     | In-container path to the input dataset CSV file for training/default prediction. | `/app/data/dataset.csv`  |
+| `MODEL_OUTPUT_PATH`   | In-container path to save the trained model file.                              | `/app/models/anomaly_model.joblib` |
+| `MODEL_CONTAMINATION` | The expected proportion of anomalies in the dataset (for some models).         | `0.1`                    |
+
+These paths (`/app/data`, `/app/models`) inside the container are mapped to `./data` and `./models` on your host machine via `docker-compose.yml`.
 
 ---
 
-## 👥 Contributors
+### Code Integrity Verification
 
-<a href="https://github.com/USC-FORTIS/AD-AGENT/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=USC-FORTIS/AD-AGENT" />
-</a>
+This project includes a mechanism to verify the integrity of its codebase.
 
-Made with [contrib.rocks](https://contrib.rocks).
+1.  **Generate the Manifest:**
+    If `sovereign_manifest.json` doesn't exist or needs updating (e.g., after code changes):
+    ```sh
+    make manifest
+    ```
+    This creates/updates `sovereign_manifest.json` with hashes of all relevant source files. **Commit this manifest to your repository.**
+
+2.  **Verify Integrity:**
+    To check if the current codebase matches the committed manifest:
+    ```sh
+    make verify-integrity
+    ```
+    This is useful to ensure the code hasn't been unintentionally (or intentionally) altered. The CI pipeline also runs this check.
+
+---
+
+### Security Considerations
+
+-   **Non-Root User:** The Docker container runs the application as a non-root user (`app`) for improved security.
+-   **Principle of Least Privilege:** The Dockerfile aims to grant only necessary permissions.
+-   **Data Encryption:** The `src/agent/encryption.py` module provides placeholder functions for encryption. For production use, robust key management (e.g., HashiCorp Vault, AWS KMS, Azure Key Vault) is crucial. **Do not hardcode keys or store them insecurely.**
+-   **Sovereign Operation Policy:** Refer to `POLICY.md` for the guiding principles of data sovereignty.
+
+---
+
+### Extending the Agent
+
+This agent is a foundational blueprint. You can extend it by:
+
+-   **Adding New Models:** Modify `src/agent/detection.py` to include different anomaly detection algorithms from libraries like PyOD, scikit-learn, etc.
+-   **Custom Preprocessing:** Enhance `src/agent/preprocessing.py` with more sophisticated data loading, cleaning, and feature engineering steps tailored to your data.
+-   **Implementing Data Manifest and Encryption:** Flesh out `src/agent/data_manifest.py` and `src/agent/encryption.py` with production-ready logic.
+-   **Adding Tests:** Populate the `tests/` directory with unit and integration tests for your modules. Run them with `make test`.
+-   **Expanding the API:** Add more endpoints to `src/main.py` to expose more functionality (e.g., trigger training/prediction via API, manage configurations).
+-   **Integrating with Data Sources:** Modify data loading to connect to databases, message queues, or other data storage systems.
+
+---
+
+### Troubleshooting
+
+-   **`make` command not found:** Ensure `make` is installed or use the direct `docker-compose` commands.
+-   **Permission errors (Docker):** Ensure your user has permissions to run Docker commands. You might need to add your user to the `docker` group on Linux or run Docker Desktop as administrator on Windows.
+-   **Port conflicts:** If port `8000` (for the API) or `8888` (for optional Jupyter) is already in use, change the host-side port mapping in `docker-compose.yml` (e.g., `"8001:8000"`).
+-   **File not found errors for data/models:** Ensure the `data/` and `models/` directories exist in your project root and that the paths in `.env` (or defaults) correctly point to files within these mapped volumes.
+
+---
+
+This Sovereign Anomaly Detection Agent provides a secure, verifiable, and user-controlled environment for your anomaly detection workloads. By adhering to the principles of data sovereignty, it empowers you to leverage powerful ML capabilities without compromising data privacy or control.
+Developed by [iniity.com](https://iniity.com).This will overwrite the existing `README.md`. Is that okay?
