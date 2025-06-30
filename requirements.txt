@@ -12,6 +12,7 @@ uvicorn[standard]==0.30.1
 python-dotenv==1.0.1
 click==8.1.7
 cryptography==42.0.8
+GitPython==3.1.43 # For verify_integrity.py script (git info)
 
 # Configuration & Validation (NEW)
 pydantic==2.8.2

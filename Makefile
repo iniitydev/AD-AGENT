@@ -43,16 +43,15 @@ lint:
 format:
 	docker-compose exec agent black src/ tests/
 
-# Updated manifest generation target as per user's Phase 1 spec
-generate-manifest:
+# Target to generate the manifest using the script directly
+manifest:
 	docker-compose exec agent python scripts/verify_integrity.py generate
 
-# Renamed verify-integrity to internal-verify-script to avoid conflict with new CLI verify
-# This target directly calls the script, while the new 'verify' calls the CLI command.
-internal-verify-script:
-	docker-compose exec agent python scripts/verify_integrity.py
+# Target to verify integrity using the script directly
+verify-integrity-script: # Renamed to be specific
+	docker-compose exec agent python scripts/verify_integrity.py verify
 
-# New verify command that uses the CLI's verify function (which calls both code and data checks)
+# Target to verify integrity using the main CLI's verify command
 verify:
 	docker-compose exec agent python -m src.main verify
 

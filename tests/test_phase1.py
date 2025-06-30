@@ -1,10 +1,13 @@
 # tests/test_phase1.py
 import pytest
 from click.testing import CliRunner
-from src.main import cli # Directly import the cli group
-from unittest.mock import patch
+from pathlib import Path
 import json
-from pathlib import Path # Ensure Path is imported
+import os
+from unittest.mock import patch
+
+from src.main import cli # Use the actual CLI entry point
+from src.config import Settings, settings as app_settings # Import for test_settings_load and monkeypatching
 
 # valid_environment fixture will be auto-discovered from conftest.py
 
@@ -14,10 +17,8 @@ def cli_runner():
 
 def test_verify_success(cli_runner, valid_environment):
     """Test successful verification scenario"""
-    # valid_environment (from conftest) sets up necessary files and env vars
-    # The env vars are passed to invoke, and Settings() inside 'verify' should pick them up.
-    with patch("src.main.verify_code_integrity_script") as mock_code_verify, \
-         patch("src.main.verify_data_integrity_func") as mock_data_verify:
+    with patch("src.main.perform_code_integrity_check_func") as mock_code_verify, \
+         patch("src.main.perform_data_file_manifest_check_func") as mock_data_verify:
 
         mock_code_verify.return_value = True
         mock_data_verify.return_value = {"status": "verified", "file": valid_environment["INPUT_DATA_PATH"]}
@@ -25,88 +26,119 @@ def test_verify_success(cli_runner, valid_environment):
         result = cli_runner.invoke(cli, ["verify"], env=valid_environment)
 
         assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}. Output:\n{result.output}"
-        assert "✅ Code integrity verified" in result.output
-        assert "✅ Data integrity verified" in result.output
-        assert "👍 Overall verification passed" in result.output # This is the success message
+        assert "✅ Code integrity script check passed (called by CLI)." in result.output
+        assert "✅ Specific data manifest integrity verified." in result.output
+        assert "👍 Overall verification passed" in result.output
         mock_code_verify.assert_called_once()
         mock_data_verify.assert_called_once_with(valid_environment["INPUT_DATA_PATH"], valid_environment["DATA_MANIFEST_PATH"])
 
-def test_verify_missing_manifest(cli_runner, valid_environment): # Removed tmp_path, valid_env creates paths
+def test_verify_missing_manifest(cli_runner, valid_environment, tmp_path, monkeypatch):
     """Test missing data manifest scenario"""
+    missing_manifest_file = tmp_path / "this_manifest_does_not_exist.json"
+
+    # Use monkeypatch to change the setting for the duration of this test
+    original_data_manifest_path = app_settings.DATA_MANIFEST_PATH
+    monkeypatch.setattr(app_settings, "DATA_MANIFEST_PATH", str(missing_manifest_file))
+
+    # Create a new env dict for invoke, inheriting from valid_environment but overriding DATA_MANIFEST_PATH
+    # This ensures that if Settings() is re-instantiated inside the command, it picks up the new path.
     env_for_test = valid_environment.copy()
-    # valid_environment creates DATA_MANIFEST_PATH. We need to ensure it points to a non-existent file for this test.
-    # The conftest.py fixture creates DATA_MANIFEST_PATH. To test missing, we can unlink it.
-    manifest_to_remove = Path(env_for_test["DATA_MANIFEST_PATH"])
-    if manifest_to_remove.exists():
-        manifest_to_remove.unlink()
+    env_for_test["DATA_MANIFEST_PATH"] = str(missing_manifest_file)
 
-    with patch("src.main.verify_code_integrity_script") as mock_code_verify:
-        mock_code_verify.return_value = True
+    try:
+        with patch("src.main.perform_code_integrity_check_func") as mock_code_verify:
+            mock_code_verify.return_value = True
 
-        result = cli_runner.invoke(cli, ["verify"], env=env_for_test)
+            result = cli_runner.invoke(cli, ["verify"], env=env_for_test)
 
-        assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}. Output:\n{result.output}"
-        # The VerificationError's message is "Verification failed for: data_manifest_missing"
-        # The details part will contain the specific reason.
-        assert "❌ Verification failed for: data_manifest_missing" in result.output
-        assert "Manifest not found" in result.output # This is part of the details
-        assert str(manifest_to_remove) in result.output # Path should be in details
+            assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}. Output:\n{result.output}"
+            assert "❌ Verification process completed with errors." in result.output
+            assert "Specific Data Manifest integrity FAILED or could not be verified." in result.output
+
+            details_json_str = result.output.split("Details:\n", 1)[1]
+            error_details = json.loads(details_json_str)
+
+            found_error = False
+            for err_item in error_details.get("summary_of_errors", []):
+                if err_item.get("category") == "specific_data_manifest_missing":
+                    assert err_item["message"] == f"Specific data manifest file not found: {missing_manifest_file}" # Check message
+                    assert err_item["details"]["expected_manifest_path"] == str(missing_manifest_file) # Check details
+                    found_error = True
+                    break
+            assert found_error, f"Specific 'specific_data_manifest_missing' error with path not found in {error_details}"
+    finally:
+        monkeypatch.setattr(app_settings, "DATA_MANIFEST_PATH", original_data_manifest_path)
+
 
 def test_verify_tampered_data(cli_runner, valid_environment):
     """Test data tampering detection"""
-    with patch("src.main.verify_code_integrity_script") as mock_code_verify, \
-         patch("src.main.verify_data_integrity_func") as mock_data_verify:
+    with patch("src.main.perform_code_integrity_check_func") as mock_code_verify, \
+         patch("src.main.perform_data_file_manifest_check_func") as mock_data_verify:
 
         mock_code_verify.return_value = True
         mock_data_verify.return_value = {
             "status": "tampered",
-            "file": "data.csv", # Matching the filename from valid_environment
-            "current_sha256": "new_hash",
-            "recorded_sha256": "original_hash"
+            "file": valid_environment["INPUT_DATA_PATH"],
+            "expected_hash": "original_hash",
+            "current_hash": "new_hash"
         }
 
         result = cli_runner.invoke(cli, ["verify"], env=valid_environment)
         assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}. Output:\n{result.output}"
-        assert "❌ Verification failed for: data_integrity_check_failed" in result.output
-        assert "Data integrity check failed: tampered" in result.output
+        assert "❌ Verification process completed with errors." in result.output
+        assert "Specific Data Manifest integrity FAILED or could not be verified." in result.output
+        assert "Tampering detected for specific data manifest" in result.output
         assert "new_hash" in result.output
 
 def test_verify_code_failure(cli_runner, valid_environment):
     """Test code verification failure"""
-    with patch("src.main.verify_code_integrity_script") as mock_code_verify, \
-         patch("src.main.verify_data_integrity_func") as mock_data_verify:
+    with patch("src.main.perform_code_integrity_check_func") as mock_code_verify, \
+         patch("src.main.perform_data_file_manifest_check_func") as mock_data_verify:
 
-        mock_code_verify.side_effect = Exception("Missing sovereign_manifest.json") # Simulate script error
+        mock_code_verify.return_value = False
         mock_data_verify.return_value = {"status": "verified"}
 
         result = cli_runner.invoke(cli, ["verify"], env=valid_environment)
         assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}. Output:\n{result.output}"
-        assert "❌ Verification failed for: code_integrity_exception" in result.output
-        assert "Missing sovereign_manifest.json" in result.output
+        assert "❌ Verification process completed with errors." in result.output
+        assert "Code integrity FAILED." in result.output
+        assert "Overall code integrity script reported issues" in result.output
 
-def test_verify_missing_data_file(cli_runner, valid_environment):
+def test_verify_missing_data_file(cli_runner, valid_environment, tmp_path, monkeypatch):
     """Test missing data file scenario"""
+    from src.config import settings as app_settings # Import for monkeypatching
+
+    missing_data_file = tmp_path / "this_data_does_not_exist.csv"
+
+    original_input_data_path = app_settings.INPUT_DATA_PATH
+    monkeypatch.setattr(app_settings, "INPUT_DATA_PATH", str(missing_data_file))
+
+    # Create an env dict for invoke, ensuring INPUT_DATA_PATH is the missing one
     env_for_test = valid_environment.copy()
-    data_file_to_remove = Path(env_for_test["INPUT_DATA_PATH"])
-    if data_file_to_remove.exists():
-        data_file_to_remove.unlink()
+    env_for_test["INPUT_DATA_PATH"] = str(missing_data_file)
 
-    # Ensure the manifest file still exists for this test
-    Path(env_for_test["DATA_MANIFEST_PATH"]).write_text(json.dumps({"data_input": {"path": str(data_file_to_remove), "hash_sha256": "anyhash"}}))
+    # Ensure the manifest that DATA_MANIFEST_PATH points to *does* exist for this test,
+    # and it refers to the (now) missing data file.
+    # The DATA_MANIFEST_PATH itself is taken from valid_environment via env_for_test.
+    manifest_path_for_test = Path(env_for_test["DATA_MANIFEST_PATH"])
+    manifest_path_for_test.write_text(json.dumps({"data_input": {"path": str(missing_data_file), "hash_sha256": "anyhash"}}))
 
-    with patch("src.main.verify_code_integrity_script") as mock_code_verify:
-        mock_code_verify.return_value = True
+    try:
+        with patch("src.main.perform_code_integrity_check_func") as mock_code_verify:
+            mock_code_verify.return_value = True
 
-        result = cli_runner.invoke(cli, ["verify"], env=env_for_test)
+            result = cli_runner.invoke(cli, ["verify"], env=env_for_test)
 
-        assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}. Output:\n{result.output}"
-        assert "❌ Verification failed for: data_file_missing" in result.output
-        assert "Data file not found" in result.output
-        assert str(data_file_to_remove) in result.output
+            assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}. Output:\n{result.output}"
+            assert "❌ Verification process completed with errors." in result.output
+            assert "Specific Data Manifest integrity FAILED or could not be verified." in result.output
+            assert f"Data file for specific manifest check not found: {missing_data_file}" in result.output
+            assert str(missing_data_file) in result.output # Check path is in details
+    finally:
+        monkeypatch.setattr(app_settings, "INPUT_DATA_PATH", original_input_data_path)
 
 
-# Keep existing encrypt/decrypt and train command tests
-def test_cli_encrypt_decrypt_flow(cli_runner, tmp_path): # tmp_path from pytest
+def test_cli_encrypt_decrypt_flow(cli_runner, tmp_path):
     plain_file = tmp_path / "encrypt_me.txt"
     plain_file.write_text("Super secret sovereign data for encryption test!")
 
@@ -128,20 +160,18 @@ def test_cli_encrypt_decrypt_flow(cli_runner, tmp_path): # tmp_path from pytest
     assert plain_file.read_text() == decrypted_file_path.read_text()
 
 def test_train_command_runs(cli_runner, valid_environment):
-    # valid_environment provides paths via env vars.
     Path(valid_environment["MODEL_OUTPUT_PATH"]).parent.mkdir(parents=True, exist_ok=True)
     Path(valid_environment["MANIFEST_OUTPUT_PATH"]).mkdir(parents=True, exist_ok=True)
 
     with patch("src.main.run_training_process") as mock_run_training:
         mock_run_training.return_value = True
 
-        # Pass paths as CLI options now, not just relying on env for settings inside train
         result = cli_runner.invoke(cli, [
             "train",
             "--input-data-path", valid_environment["INPUT_DATA_PATH"],
             "--model-output-path", valid_environment["MODEL_OUTPUT_PATH"],
             "--manifest-output-path", valid_environment["MANIFEST_OUTPUT_PATH"]
-        ], env=valid_environment) # env still useful if train internal logic re-instantiates Settings
+        ], env=valid_environment)
 
         assert result.exit_code == 0, f"Train command failed. Output:\n{result.output}"
         assert "Model training finished successfully" in result.output
@@ -152,8 +182,7 @@ def test_train_command_runs(cli_runner, valid_environment):
         )
 
 def test_settings_load(valid_environment, cli_runner):
-    # Use the "config" command which reloads settings
-    result = cli_runner.invoke(cli, ["config"], env=valid_environment)
-    assert result.exit_code == 0
-    assert f"INPUT_DATA_PATH: {valid_environment['INPUT_DATA_PATH']}" in result.output
-    assert f"DATA_MANIFEST_PATH: {valid_environment['DATA_MANIFEST_PATH']}" in result.output
+    config_result = cli_runner.invoke(cli, ["config"], env=valid_environment)
+    assert config_result.exit_code == 0
+    assert f"INPUT_DATA_PATH: {valid_environment['INPUT_DATA_PATH']}" in config_result.output
+    assert f"DATA_MANIFEST_PATH: {valid_environment['DATA_MANIFEST_PATH']}" in config_result.output
