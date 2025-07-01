@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     MODEL_STORE_PATH: str = Field(default="/app/models/store/", description="Path to store versioned models.") # For Phase 2
     EXPERIMENT_LOG_DIR: str = Field(default="/app/logs/experiments/", description="Directory for experiment logs.") # For Phase 2
 
+    # Branding Configuration
+    APP_NAME: str = Field(default="Iniity Sovereign AI Agent", description="Application name for branding.")
+    COPYRIGHT_HOLDER: str = Field(default="Iniity Inc.", description="Copyright holder for branding.")
+
 
 # Create a single, importable instance of the settings
 settings = Settings()

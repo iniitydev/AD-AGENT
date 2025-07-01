@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sovereign Anomaly Detection</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="logo">
+          <img src="/static/images/logo.svg" alt="Sovereign Logo">
+          <span>Sovereign Platform</span>
+        </div>
+        <div id="status-indicator" class="status-indicator status-local">
+          Initializing...
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h1>Welcome to Sovereign Anomaly Detection</h1>
+      <p>Your local, privacy-first anomaly detection platform is running.</p>
+
+      <div class="system-status">
+        <h2>System Status</h2>
+        <div id="health-status">Checking health...</div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="btn" onclick="window.location.href='/api/v1/health'">
+          Check Health
+        </button>
+        <button class="btn" onclick="window.location.href='/api/docs'">
+          View API Docs
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Getting Started</h2>
+      <ol>
+        <li>Configure your environment variables</li>
+        <li>Load your dataset using the CLI</li>
+        <li>Train your anomaly detection model</li>
+        <li>Start monitoring for anomalies</li>
+      </ol>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Sovereign Anomaly Detection Platform &copy; <span id="current-year"></span></p>
+      <p>Version 1.0 | Local Sovereignty First</p>
+    </div>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

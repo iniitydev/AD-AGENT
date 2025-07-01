@@ -63,3 +63,26 @@ predict:
 
 clean:
 	docker-compose down -v --remove-orphans
+
+# --- Rebranding Phase Targets ---
+# Note: The `sed -i` command below is for GNU sed. For macOS/BSD sed, it might need `sed -i ''`.
+# This target is a helper and assumes a SECRET_KEY exists in the .env file.
+# Actual rotation of external service keys is a manual process.
+rotate-secrets:
+	@echo "🔑 Generating new example SECRET_KEY..."
+	@python -c "import secrets; print(f'NEW_EXAMPLE_SECRET_KEY={secrets.token_urlsafe(48)}')" > .env.new.example
+	@echo "   New example key written to .env.new.example."
+	@echo "   To apply to your .env file (if it contains SECRET_KEY=...):"
+	@echo "   1. Review .env.new.example"
+	@echo "   2. Manually update or use: sed -i 's/^SECRET_KEY=.*/SECRET_KEY_NEEDS_UPDATE_FROM_NEW_EXAMPLE/' .env && echo 'SECRET_KEY updated line marked in .env'"
+	@echo "      (Adjust sed command for your OS if not Linux. Be cautious with direct file edits.)"
+	@echo ""
+	@echo "‼️ IMPORTANT: MANUALLY ROTATE THESE EXTERNAL SECRETS/KEYS:"
+	@echo "   1. Cloud Provider Access Keys (AWS/Azure/GCP)"
+	@echo "   2. CI/CD Pipeline Tokens (GitHub Actions secrets, etc.)"
+	@echo "   3. Database Credentials (if used)"
+	@echo "   4. External API Keys (e.g., Pinata for IPFS if used in future)"
+	@echo "   5. Any other sensitive credentials used by the application or deployment."
+	@echo ""
+	@echo "   After updating .env and external services, you can remove .env.new.example."
+	@echo "Secrets rotation reminders complete. Manual action required for full security."

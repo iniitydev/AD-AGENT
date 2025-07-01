@@ -1,23 +1,28 @@
 {
   "files": {
-    "scripts/verify_integrity.py": "sha256:8c62a9b8d9c83ae329b5db288842679f802941991f0ac9361a06337f4deb6548",
+    "scripts/cleanup-assets.sh": "sha256:4d046ecaade46dd454254aa56ed2936e2d7a0b0513151422dc20caa0b257f71c",
+    "scripts/rebrand.py": "sha256:595178c40e7165cf443efd007a5b4745577e05b8a66c30a5a2652ef3424bfc08",
+    "scripts/verify_integrity.py": "sha256:6ad86d889c26942684b9ea01e501159f05655a8579a5b9dece18cbc9e3bd2883",
     "src/__init__.py": "sha256:0d93480383756c6e9e80f34785a04ec276caa84fb50dd6f65f3fda0347be0bc7",
     "src/agent/__init__.py": "sha256:95b7f204f3f0b7e185cb6e74ca240db1dd22dd158c08b1a2f9a487a030796464",
     "src/agent/data_manifest.py": "sha256:bebe44ad21062eee499bc2281ec8472d206f8c0f962870a4bfd9deca462ac175",
     "src/agent/detection.py": "sha256:04fc44a53c931a849d8518fbb40d4a96f6729f8448f7a1d0a852bc146b0c31ab",
     "src/agent/encryption.py": "sha256:45b32fe8961d81801c5235cfe648e0ef9a901e39368bcad878ca7387531fe95e",
     "src/agent/preprocessing.py": "sha256:e4e0e5b47dfae076991472a70bbf1c9cb753fcd1eda9b74a2e37f8e873b7f0f0",
-    "src/config.py": "sha256:1cb6982db095947439c86110cd84c3d539f54a3676f0c90f74e66ee32191af6a",
+    "src/config.py": "sha256:191752de7cd8d7da780af6018cd51014628c6be6d31956fb9e0c005d83a6e6f2",
     "src/logger.py": "sha256:df9f763254d9abc33cb633b3f7685ee63f7707b69fb8ffdce96ce4f610cef8ef",
-    "src/main.py": "sha256:20a85939268b9c3ab599680b3f5918d640fb030c77cde0c1d89e27852302e8a5",
+    "src/main.py": "sha256:975dfe9cd3ad505a4659420895df42628aab3ca111b31a46624cda53f1eeb953",
     "tests/__init__.py": "sha256:312e5136af983770d43503721e189853a14b50a31d98d7c2d2e021ff944cf73d",
+    "tests/api/test_health.py": "sha256:93b6da1e0cc5b6859dab37a7a03751ab015cef5b8bf27560b7d2c1cf90c276a1",
+    "tests/api/test_integrity_api.py": "sha256:35fe8d4cb80522d273c9e4a0a7a3b9049fdf61f22a44391563b217105469d12c",
+    "tests/archived_test_phase1.py": "sha256:75c45e9cf9a7a65e4a15e96c1f6a83af5adc31cc99993c41bf5e5c94789bfd94",
     "tests/conftest.py": "sha256:a7b4aebbcf5687f0575485d859a73def7c274d16277f6749cf75c00bb339172c",
-    "tests/test_integrity.py": "sha256:e761e94d179f77008be546722d9e3e2629de8ff5917edfd1a84981c67ae3e3ab",
-    "tests/test_phase1.py": "sha256:b4bcfe7125b47f5f60662261a18182d63239fe46730fd2a097a19023db493263"
+    "tests/test_integrity.py": "sha256:2ac1f522204db4b18d66bf237f5f46f45177ca7f7a1b4e94a5e1d50301ebafe5",
+    "tests/test_rebranding.py": "sha256:8e091cba347a72d500fc6d07e185bd6112c09cf933afdf46ba0db7d8186ab90e"
   },
   "git_info": {
-    "error": "Could not retrieve git info: HEAD is a detached symbolic reference as it points to '24cb1be2d1056c82e03fd87e5f382d9fa07d69bc'"
+    "error": "Could not retrieve git info: HEAD is a detached symbolic reference as it points to '4d389e94448ffc1a50c82eab2d335bf8b4e7f6d2'"
   },
   "manifest_version": "2.5.0",
-  "timestamp": "2025-06-30T19:56:51.307922"
+  "timestamp": "2025-07-01T00:49:49.777620"
 }

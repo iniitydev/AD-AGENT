@@ -1,28 +1,55 @@
-# Core ML & Data Libraries
-pandas==2.2.2
-scikit-learn==1.5.0
-pyod==2.0.0
-joblib==1.4.2
+fastapi==0.104.1
+uvicorn[standard]==0.23.2
+jinja2==3.1.2
+python-multipart==0.0.6 # For potential file uploads in API later
+pytest==7.4.2
+requests==2.31.0 # For potential external API calls by agent or IPFS
 
-# API Framework
-fastapi==0.111.0
-uvicorn[standard]==0.30.1
+# Dependencies from previous phases that will likely be needed again:
+# pandas==2.2.2
+# scikit-learn==1.5.0
+# pyod==2.0.0
+# joblib==1.4.2
+# python-dotenv==1.0.1
+# click==8.1.7 # May not be needed if CLI is fully removed or separated
+# cryptography==42.0.8
+# pydantic==2.8.2 # FastAPI depends on Pydantic
+# pydantic-settings==2.3.4
+# GitPython==3.1.43
+# weasyprint==60.3
 
-# Utilities
-python-dotenv==1.0.1
-click==8.1.7
+# For now, using the minimal set provided by the user for the web foundation.
+# Will add others back as backend logic is integrated.
+# FastAPI includes pydantic, so explicit pydantic might not be needed unless specific version.
+# Uvicorn[standard] includes click, python-dotenv, pyyaml.
+# Pytest includes iniconfig, packaging, pluggy, pygments.
+# We should consolidate and ensure versions are compatible.
+
+# Let's refine to what's directly imported by new src/main.py and tests/api/test_health.py
+# fastapi (pulls pydantic, starlette)
+# uvicorn[standard] (pulls click, h11, httptools, python-dotenv, pyyaml, uvloop, watchfiles, websockets)
+# jinja2 (for templates)
+# pytest (for tests)
+# requests (often useful, though not directly in these two files yet)
+# python-multipart (FastAPI good-to-have for forms)
+
+# Consolidating based on user's latest requirements.txt for web foundation:
+fastapi==0.104.1
+uvicorn[standard]==0.23.2
+jinja2==3.1.2
+python-multipart==0.0.6
+pytest==7.4.2
+requests==2.31.0
+httpx==0.25.0 # Required by fastapi.testclient
+# Adding back pydantic-settings for src.config
+pydantic-settings==2.3.4 # Assuming this is still used by src.config.py
+# Adding back cryptography for src.agent.encryption (will be needed soon)
 cryptography==42.0.8
-GitPython==3.1.43 # For verify_integrity.py script (git info)
-
-# Configuration & Validation (NEW)
-pydantic==2.8.2
-pydantic-settings==2.3.4
-
-# -----------------------------------------------------------------------------
-# DEVELOPMENT & LINTING
-# -----------------------------------------------------------------------------
-pytest==8.2.2
-pytest-cov==5.0.0
-black==24.4.2
-flake8==7.1.0
-pre-commit==3.7.1
+# Adding back GitPython for scripts.verify_integrity (will be needed for API)
+GitPython==3.1.43
+# ML stack will be added in Phase D
+# PDF generation stack will be added in Phase C
+# python-dotenv is included in uvicorn[standard]
+# click is included in uvicorn[standard]
+# pydantic is included in fastapi
+# pyyaml is included in uvicorn[standard]
