@@ -1,5 +1,4 @@
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 import os
 import sys
@@ -10,7 +9,7 @@ from data_loader.data_loader import DataLoader
 from ad_model_selection.prompts.pygod_ms_prompt import generate_model_selection_prompt_from_pygod
 from ad_model_selection.prompts.pyod_ms_prompt import generate_model_selection_prompt_from_pyod
 from ad_model_selection.prompts.timeseries_ms_prompt import generate_model_selection_prompt_from_timeseries
-from utils.openai_client import query_openai
+from utils.llm_client import query_llm, get_embedding_model
 import json
 
 class AgentSelector:
@@ -88,7 +87,7 @@ class AgentSelector:
                 size = self.X_train.shape[0]
                 dim = self.X_train.shape[1]
                 messages = generate_model_selection_prompt_from_pyod(name, size, dim)
-                content = query_openai(messages, model="o4-mini")
+                content = query_llm(messages, model="o4-mini")
                 algorithm = json.loads(content)["choice"]
             elif self.package_name == 'pygod':
                 num_node = self.X_train.num_nodes
@@ -97,7 +96,7 @@ class AgentSelector:
                 avg_degree = num_edge / num_node
                 print(f"num_node: {num_node}, num_edge: {num_edge}, num_feature: {num_feature}, avg_degree: {avg_degree}")
                 messages = generate_model_selection_prompt_from_pygod(name, num_node, num_edge, num_feature, avg_degree)
-                content = query_openai(messages, model="o4-mini")
+                content = query_llm(messages, model="o4-mini")
                 algorithm = json.loads(content)["choice"]
             else:  # for time series data
                 if self.X_train is not None and type(self.X_train) is not str:
@@ -108,7 +107,7 @@ class AgentSelector:
 
                     num_signals = len(self.X_train)
                     messages = generate_model_selection_prompt_from_timeseries(name, num_signals)
-                    content = query_openai(messages, model="o4-mini")
+                    content = query_llm(messages, model="o4-mini")
                     algorithm = json.loads(content)["choice"]
                     print(f"Algorithm: {algorithm}")
                 else:
@@ -140,7 +139,7 @@ class AgentSelector:
       """
       The segmented document blocks are converted into vectors and stored in the FAISS vector database.
       """
-      embedding = OpenAIEmbeddings()
+      embedding = get_embedding_model()
       vectorstore = FAISS.from_texts(documents, embedding)
       return vectorstore
     def generate_tools(self,algorithm_input):

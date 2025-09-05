@@ -8,7 +8,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
 # ========== langgraph ==========
 from langchain_core.messages import BaseMessage
 from langgraph.graph import StateGraph, END
-from langchain_openai          import ChatOpenAI
+from utils.llm_client import get_llm
 
 # ========== business agents ==========
 from agents.agent_processor import AgentProcessor
@@ -181,7 +181,7 @@ def call_optimizer_for_single_tool(state: FullToolState) -> dict:
         return {"code_quality": cq}
 
     print(f"\n=== [Optimizer] Parameter tuning for {state['current_tool']} ===")
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = get_llm(model="gpt-4o", temperature=0)
     tuned_cq = optimizer.run(llm=llm,
                              quality=cq,
                              algorithm_doc=doc,

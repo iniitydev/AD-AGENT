@@ -1,0 +1,12 @@
+{
+  "name": "AD-AGENT",
+  "description": "An LLM-driven multi-agent anomaly detection platform.",
+  "setup": [
+    "pip install -r requirements.txt"
+  ],
+  "run": {
+    "default": "python main.py",
+    "parallel": "python main.py -p",
+    "optimizer": "python main.py -o"
+  }
+}

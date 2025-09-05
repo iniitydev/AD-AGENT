@@ -10,7 +10,7 @@ AgentProcessor - Using Few-shot Chain-of-Thought (CoT) Extraction
 import os
 import re
 import json
-import openai
+from utils.llm_client import query_llm
 
 
 class AgentProcessor:
@@ -112,12 +112,11 @@ class AgentProcessor:
 
     def get_chatgpt_response(self, messages):
         """
-        Call OpenAI chat model and return the assistant's response.
+        Call the configured chat model and return the assistant's response.
         """
-        response = openai.chat.completions.create(
-            model=self.model, messages=messages, temperature=self.temperature
-        )
-        return response.choices[0].message.content.strip()
+        # Note: self.model and self.temperature are not used here anymore,
+        # as the new llm_client handles the model configuration.
+        return query_llm(messages, model=self.model).strip()
 
     def extract_config(self, user_input: str) -> dict:
         """
