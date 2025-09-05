@@ -19,28 +19,19 @@ class AgentSelector:
       self.data_path_train = user_input['dataset_train']
       self.data_path_test = user_input['dataset_test']
       self.user_input = user_input
+      self.tools = []
 
-      # if user_input['dataset_train'].endswith(".pt"):
-      #   self.package_name = "pygod"
-      # elif user_input['dataset_train'].endswith(".mat"):
-      #   self.package_name = "pyod"
-      # elif user_input['dataset_train'].endswith("_train.npy"):
-      #   user_input['dataset_train'] = user_input['dataset_train'].replace("_train.npy", "")
-      #   self.package_name = "tslib"
-      # else:
-      #   self.package_name = "darts"
-
-
-      self.tools = self.generate_tools(user_input['algorithm'])
-
+      # 1. Load data and determine package name
       self.load_data(self.data_path_train, self.data_path_test)
+
+      # 2. Set tools based on user input and package name
       self.set_tools()
 
       print(f"Package name: {self.package_name}")
       print(f"Algorithm: {user_input['algorithm']}")
       print(f"Tools: {self.tools}")
 
-      
+      # 3. Build vectorstore for documentation retrieval
       self.documents = self.load_and_split_documents()
       self.vectorstore = self.build_vectorstore(self.documents)
 
@@ -78,43 +69,55 @@ class AgentSelector:
         self.package_name = "pyod"
 
     def set_tools(self):
-      user_input = self.user_input
-      if user_input['algorithm'] and user_input['algorithm'][0].lower() == "all":
-        self.tools = self.generate_tools(user_input['algorithm'])
-      else:
-        name = os.path.basename(self.data_path_train)
-        if self.package_name == "pyod":
-          size = self.X_train.shape[0]
-          dim = self.X_train.shape[1]
-          messages = generate_model_selection_prompt_from_pyod(name, size, dim)
-          content = query_openai(messages, model="o4-mini")
-          algorithm = json.loads(content)["choice"]
-        elif self.package_name == 'pygod':
-          num_node = self.X_train.num_nodes
-          num_edge = self.X_train.num_edges
-          num_feature = self.X_train.num_features
-          avg_degree = num_edge / num_node
-          print(f"num_node: {num_node}, num_edge: {num_edge}, num_feature: {num_feature}, avg_degree: {avg_degree}")
-          messages = generate_model_selection_prompt_from_pygod(name, num_node, num_edge, num_feature, avg_degree)
-          content = query_openai(messages, model="o4-mini")
-          algorithm = json.loads(content)["choice"]
-          # print(f"Algorithm: {algorithm}")
-        else: # for time series data
-          if self.X_train is not None and type(self.X_train) is not str:
-            print('Shape of X_train:', self.X_train.shape)
-            if len(self.X_train.shape) > 1:
-              num_features = self.X_train.shape[1]
-              self.parameters['enc_in'] = num_features
-            
-            num_signals = len(self.X_train)
-            messages = generate_model_selection_prompt_from_timeseries(name, num_signals)
-            content = query_openai(messages, model="o4-mini")
-            algorithm = json.loads(content)["choice"]
-            print(f"Algorithm: {algorithm}")
-          else:
-            algorithm = 'Autoformer'
+        user_input = self.user_input
+        algorithm_input = user_input.get('algorithm')
 
-        print('Selector Parameters:', self.parameters)
+        # Case 1: User specified "all"
+        if algorithm_input and algorithm_input[0].lower() == "all":
+            self.tools = self.generate_tools(algorithm_input)
+
+        # Case 2: User specified a specific algorithm or list of algorithms
+        elif algorithm_input:
+            self.tools = algorithm_input
+
+        # Case 3: No algorithm specified, use LLM to select one
+        else:
+            name = os.path.basename(self.data_path_train)
+            algorithm = None
+            if self.package_name == "pyod":
+                size = self.X_train.shape[0]
+                dim = self.X_train.shape[1]
+                messages = generate_model_selection_prompt_from_pyod(name, size, dim)
+                content = query_openai(messages, model="o4-mini")
+                algorithm = json.loads(content)["choice"]
+            elif self.package_name == 'pygod':
+                num_node = self.X_train.num_nodes
+                num_edge = self.X_train.num_edges
+                num_feature = self.X_train.num_features
+                avg_degree = num_edge / num_node
+                print(f"num_node: {num_node}, num_edge: {num_edge}, num_feature: {num_feature}, avg_degree: {avg_degree}")
+                messages = generate_model_selection_prompt_from_pygod(name, num_node, num_edge, num_feature, avg_degree)
+                content = query_openai(messages, model="o4-mini")
+                algorithm = json.loads(content)["choice"]
+            else:  # for time series data
+                if self.X_train is not None and type(self.X_train) is not str:
+                    print('Shape of X_train:', self.X_train.shape)
+                    if len(self.X_train.shape) > 1:
+                        num_features = self.X_train.shape[1]
+                        self.parameters['enc_in'] = num_features
+
+                    num_signals = len(self.X_train)
+                    messages = generate_model_selection_prompt_from_timeseries(name, num_signals)
+                    content = query_openai(messages, model="o4-mini")
+                    algorithm = json.loads(content)["choice"]
+                    print(f"Algorithm: {algorithm}")
+                else:
+                    algorithm = 'Autoformer'
+
+            if algorithm:
+                self.tools = [algorithm]
+
+            print('Selector Parameters:', self.parameters)
         
 
     def load_and_split_documents(self,folder_path="./docs"):
