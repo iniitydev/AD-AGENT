@@ -109,3 +109,4 @@ reformer-pytorch == 1.4.4
 PyWavelets
 langchain-community
 ollama
+Jinja2

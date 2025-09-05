@@ -84,20 +84,24 @@ OPENAI_API_KEY = 'your-api-key-here'
 
 ---
 
-## 🚀 Privacy-First Execution with Local LLMs
+## 🚀 Automated & Interactive Setup
 
 This project can be run without an OpenAI API key, protecting your privacy and allowing for offline use. If the `OPENAI_API_KEY` is not set, the application will automatically fall back to using a local Large Language Model (LLM) powered by [Ollama](https://ollama.com/).
 
-### Automated Setup and Execution
-
-To simplify setup and execution, you can use the provided `ai_runner.py` script. This script reads the `runner.json` manifest file to install dependencies and run the application automatically.
+To simplify setup and execution, you can use the provided `ai_runner.py` script. This script acts as an automated onboarding tool.
 
 ```bash
 # Ensure you have Python installed, then run:
 python ai_runner.py
 ```
 
-The runner will first execute the setup commands to install all necessary dependencies and then run the main application. This is the recommended way to get started.
+**On the first run**, the script will:
+1.  Prompt you to enter configuration values (like your OpenAI API key).
+2.  Generate the `config/config.py` file from a template.
+3.  Install all necessary dependencies from `requirements.txt`.
+4.  Run the main application.
+
+On subsequent runs, the script will skip the configuration and dependency installation and run the application directly. This is the recommended way to get started.
 
 ---
 

@@ -1,6 +1,14 @@
 {
   "name": "AD-AGENT",
   "description": "An LLM-driven multi-agent anomaly detection platform.",
+  "variables": [
+    {
+      "name": "OPENAI_API_KEY",
+      "description": "Enter your OpenAI API key (optional, press Enter to skip and use a local LLM)",
+      "type": "string",
+      "default": ""
+    }
+  ],
   "setup": [
     "pip install -r requirements.txt"
   ],
